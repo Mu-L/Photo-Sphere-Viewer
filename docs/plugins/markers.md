@@ -17,7 +17,7 @@ The plugin provides a powerful markers system allowing to define points of inter
 
 There are four types of markers :
 
--   **HTML** defined with the `html`/`element` attribute
+-   **HTML** defined with the `html`/`element`/`elementLayer` attribute
 -   **Images** defined with the `image`/`imageLayer` attribute
 -   **Videos** defined with the `videoLayer` attribute
 -   **SVGs** defined with the `square`/`rect`/`circle`/`ellipse`/`path` attribute
@@ -254,6 +254,7 @@ One, and only one, of these options is required for each marker.
 | `videoLayer`     | `string`                                 | Path to a video file.                                                         |
 | `html`           | `string`                                 | HTML content of the marker. It is recommended to define `width` and `height`. |
 | `element`        | `HTMLElement`                            | Existing DOM element.                                                         |
+| `elementLayer`   | `HTMLElement`                            | Existing DOM element.                                                         |
 | `square`         | `integer`                                | Size of the square.                                                           |
 | `rect`           | `integer[2]`<br>`{width:int,height:int}` | Size of the rectangle.                                                        |
 | `circle`         | `integer`                                | Radius of the circle.                                                         |
@@ -273,6 +274,7 @@ One, and only one, of these options is required for each marker.
   videoLayer: 'intro.mp4',
   html: 'Click here',
   element: document.querySelector('#my-marker'),
+  elementLayer: getEmbedIframe(),
   square: 10,
   rect: [10, 5],
   rect: {width: 10, height: 5},
@@ -293,7 +295,7 @@ And `image` marker is rendered flat above the viewer but and `imageLayer` is ren
 :::
 
 ::: tip Custom element markers
-The `element` marker accepts [Web Components](https://developer.mozilla.org/docs/Web/API/Web_components/Using_custom_elements).
+The `element`/`elementLayer` marker accepts [Web Components](https://developer.mozilla.org/docs/Web/API/Web_components/Using_custom_elements).
 If your component has an `updateMarker()` method it will be called by the plugin on each render with a bunch of properties:
 
 -   `marker`: reference to the marker object itself
@@ -308,8 +310,10 @@ If your component has an `updateMarker()` method it will be called by the plugin
 ::: tip "Layers" positionning
 There is two ways to position `imageLayer` and `videoLayer` markers:
 
--   `position` (one value) + `size` + `anchor` (optional) + `orientation` (optional)
+-   `position` (one value) + `size` + `anchor` (optional) + `rotation` (optional)
 -   `position` with four values defining the corners of the image/video
+
+`elementLayer` can only be positionned with `position` + `rotation`
 
 [Check the demo](../demos/markers/layers.md)
 :::
@@ -328,7 +332,7 @@ Unique identifier of the marker.
 
 Position of the marker in **spherical coordinates** (radians/degrees) or **texture coordinates** (pixels).
 
-For `imageLayer` and `videoLayer` it can be defined as an array of four positions (clockwise from top-left) to precisely place the four corners of the element.
+For `imageLayer` and `videoLayer` only it can be defined as an array of four positions (clockwise from top-left) to precisely place the four corners of the element.
 
 _(This option is ignored for polygons and polylines)._
 
@@ -342,20 +346,25 @@ _(This option is ignored for polygons and polylines)._
 
 #### `rotation`
 
--   type: `string | number`
+-   type: `string | number | { yaw, pitch, roll }`
 
 Rotation applied to the marker, in degrees or radians.
 
+-   For 2D markers (`image`, `element`, `square`, etc.) only `roll` is applicable
+-   For 3D markers (`imageLayer`, `videoLayer`, `elementLayer`) all axis are applicable but is ignored if `position` is an array
+
 _(This option is ignored for polygons and polylines)._
 
-#### `orientation` (only for `imageLayer`, `videoLayer`)
+#### `orientation`
 
--   type: `'front' | 'horizontal' | 'vertical-left' | 'vertical-right'`
--   default: `'front'`
+::: warning Deprecated
+The same effect can be achieved by using the `rotation` option.
 
-Applies a perspective on the image to make it look like placed on the floor or on a wall.
-
-_(Ignored if `position` is an array)._
+- front → no rotation
+- horizontal → `rotation.pitch: (+/-) Math.PI` (the sign depends on the marker `position.pitch`)
+- vertical-left → `rotation.yaw: 1.25`
+- vertical-right → `rotation.yaw: -1.25`
+:::
 
 #### `scale`
 
@@ -364,7 +373,7 @@ _(Ignored if `position` is an array)._
 
 Configures the scale of the marker depending on the zoom level and/or the horizontal angle offset. This aims to give a natural feeling to the size of the marker as the users zooms and moves.
 
-_(This option is ignored for polygons, polylines, `imageLayer` and `videoLayer` markers)._
+_(This option is ignored for polygons, polylines and layers)._
 
 :::: tabs
 
@@ -413,7 +422,7 @@ scale: {
 
 Overrides the [global `defaultHoverScale`](#defaulthoverscale). The configuration is merged with the default configuration of x2 scaling in 100ms with a linear easing. Defining `hoverScale: false` allows to disable the scaling for this marker. [See demo](../demos/markers/hover-scale.md).
 
-_(This option is ignored for polygons, polylines and `imageLayer` markers)._
+_(This option is ignored for polygons, polylines and layers)._
 
 ```js
 {

@@ -1,4 +1,4 @@
-import { PSVError, utils, type Viewer } from '@photo-sphere-viewer/core';
+import { PSVError, type Viewer } from '@photo-sphere-viewer/core';
 import { type MarkersPlugin } from '../MarkersPlugin';
 import { MarkerType } from '../MarkerType';
 import { MarkerConfig } from '../model';
@@ -8,6 +8,7 @@ import { AbstractStandardMarker } from './AbstractStandardMarker';
  * @internal
  */
 export class MarkerNormal extends AbstractStandardMarker {
+
     constructor(viewer: Viewer, plugin: MarkersPlugin, config: MarkerConfig) {
         super(viewer, plugin, config);
     }
@@ -18,7 +19,7 @@ export class MarkerNormal extends AbstractStandardMarker {
 
     override createElement(): void {
         this.element = document.createElement('div');
-        super.createElement();
+        this.afterCreateElement();
     }
 
     override update(config: MarkerConfig): void {
@@ -26,20 +27,17 @@ export class MarkerNormal extends AbstractStandardMarker {
 
         const element = this.domElement;
 
-        if (!utils.isExtendedPosition(this.config.position)) {
-            throw new PSVError('missing marker position');
-        }
         if (this.config.image && !this.config.size) {
             throw new PSVError('missing marker size');
         }
 
         if (this.config.size) {
-            this.state.dynamicSize = false;
+            this.needsUpdateSize = false;
             this.state.size = this.config.size;
             element.style.width = this.config.size.width + 'px';
             element.style.height = this.config.size.height + 'px';
         } else {
-            this.state.dynamicSize = true;
+            this.needsUpdateSize = true;
         }
 
         switch (this.type) {
@@ -60,14 +58,5 @@ export class MarkerNormal extends AbstractStandardMarker {
                 }
                 break;
         }
-
-        // set anchor
-        element.style.transformOrigin = `${this.state.anchor.x * 100}% ${this.state.anchor.y * 100}%`;
-
-        // convert texture coordinates to spherical coordinates
-        this.state.position = this.viewer.dataHelper.cleanPosition(this.config.position);
-
-        // compute x/y/z position
-        this.state.positions3D = [this.viewer.dataHelper.sphericalCoordsToVector3(this.state.position)];
     }
 }

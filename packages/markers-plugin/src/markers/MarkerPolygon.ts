@@ -68,10 +68,6 @@ export class MarkerPolygon extends AbstractDomMarker {
 
         const element = this.domElement;
 
-        element.classList.add('psv-marker--poly');
-
-        this.state.dynamicSize = true;
-
         // set style
         if (this.config.svgStyle) {
             Object.entries(this.config.svgStyle).forEach(([prop, value]) => {

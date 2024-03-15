@@ -21,6 +21,7 @@ import { Marker } from './Marker';
  * @internal
  */
 export class Marker3D extends Marker {
+
     override get threeElement(): Group {
         return this.element;
     }
@@ -96,8 +97,6 @@ export class Marker3D extends Marker {
         const group = mesh.parent;
         const material = mesh.material;
 
-        this.state.dynamicSize = false;
-
         if (utils.isExtendedPosition(this.config.position)) {
             if (!this.config.size) {
                 throw new PSVError('missing marker size');
@@ -109,21 +108,28 @@ export class Marker3D extends Marker {
             // 100 is magic number that gives a coherent size at default zoom level
             mesh.scale.set(this.config.size.width / 100, this.config.size.height / 100, 1);
             mesh.position.set(mesh.scale.x * (0.5 - this.state.anchor.x), mesh.scale.y * (this.state.anchor.y - 0.5), 0);
-            mesh.rotation.set(0, 0, -this.config.rotation);
             this.viewer.dataHelper.sphericalCoordsToVector3(this.state.position, group.position);
 
             group.lookAt(0, group.position.y, 0);
-            switch (this.config.orientation) {
-                case 'horizontal':
-                    group.rotateX(this.state.position.pitch < 0 ? -Math.PI / 2 : Math.PI / 2);
-                    break;
-                case 'vertical-left':
-                    group.rotateY(-Math.PI * 0.4);
-                    break;
-                case 'vertical-right':
-                    group.rotateY(Math.PI * 0.4);
-                    break;
-                // no default
+            if (this.config.orientation) {
+                utils.logWarn(`Marker#orientation is deprecated, use "rotation.yaw" or "rotation.pitch" instead`);
+                mesh.rotateZ(-this.config.rotation.roll);
+                switch (this.config.orientation) {
+                    case 'horizontal':
+                        group.rotateX(this.state.position.pitch < 0 ? -Math.PI / 2 : Math.PI / 2);
+                        break;
+                    case 'vertical-left':
+                        group.rotateY(-Math.PI * 0.4);
+                        break;
+                    case 'vertical-right':
+                        group.rotateY(Math.PI * 0.4);
+                        break;
+                    // no default
+                }
+            } else {
+                mesh.rotateY(-this.config.rotation.yaw);
+                mesh.rotateX(-this.config.rotation.pitch);
+                mesh.rotateZ(-this.config.rotation.roll);
             }
 
             const p = mesh.geometry.getAttribute('position');
@@ -176,6 +182,10 @@ export class Marker3D extends Marker {
                     const texture = new VideoTexture(video);
                     material.map = texture;
                     material.alpha = 0;
+
+                    if (video.autoplay) {
+                        video.play();
+                    }
 
                     video.addEventListener('loadedmetadata', () => {
                         if (!this.viewer) {
