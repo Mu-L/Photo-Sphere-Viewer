@@ -66,7 +66,7 @@ export function checkEventHandler(handler: Cypress.Agent<sinon.SinonStub>, param
 
 export function createBaseSnapshot() {
     if (Cypress.config('isInteractive')) {
-        Cypress.env('visualRegressionType', 'base');
+        Cypress.expose('visualRegressionType', 'base');
     } else {
         throw new Error(`Unauthorized call to createBaseSnapshot`);
     }

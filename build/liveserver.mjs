@@ -1,5 +1,6 @@
 import liveServer from 'alive-server';
 import fs from 'fs';
+import { readFile, writeFile } from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import selfsigned from 'selfsigned';
@@ -15,7 +16,7 @@ const PACKAGES_DIR = 'packages';
 const DIST_DIR = 'dist';
 
 const packages = fs.readdirSync(path.join(rootDir, PACKAGES_DIR)).filter(name => name !== 'shared');
-const fakeCert = getFakeCert();
+const fakeCert = await getFakeCert();
 const e2e = process.argv[2] === '--e2e';
 
 let currentIp = '';
@@ -47,17 +48,17 @@ liveServer.start({
 });
 
 // from https://github.com/greggman/servez-lib/blob/master/lib/servez.js
-function getFakeCert() {
+async function getFakeCert() {
     const pemFile = path.join(rootDir, '.tmp/fake-cert.pem');
     const keyFile = path.join(rootDir, '.tmp/fake-cert.key');
     if (fs.existsSync(pemFile) && fs.existsSync(keyFile)) {
         const stat = fs.statSync(pemFile);
         if (new Date() - stat.mtime < 28 * 24 * 60 * 60 * 1000) {
-            return fs.readFileSync(keyFile, 'utf8') + fs.readFileSync(pemFile, 'utf8');
+            return (await readFile(keyFile, 'utf8')) + (await readFile(pemFile, 'utf8'));
         }
     }
 
-    const pems = selfsigned.generate([{ name: 'commonName', value: 'localhost' }], {
+    const pems = await selfsigned.generate([{ name: 'commonName', value: 'localhost' }], {
         algorithm: 'sha256',
         days: 1,
         keySize: 2048,
@@ -112,8 +113,8 @@ function getFakeCert() {
     });
 
     fs.mkdirSync(path.dirname(pemFile), { recursive: true });
-    fs.writeFileSync(pemFile, pems.cert);
-    fs.writeFileSync(keyFile, pems.private);
+    await writeFile(pemFile, pems.cert);
+    await writeFile(keyFile, pems.private);
 
     return pems.private + pems.cert;
 }

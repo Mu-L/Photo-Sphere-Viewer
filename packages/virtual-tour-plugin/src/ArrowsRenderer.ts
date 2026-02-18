@@ -43,11 +43,11 @@ export class ArrowsRenderer extends AbstractComponent {
 
         this.renderer = this.is3D
             ? new CSS3DRenderer({
-                element: this.container,
-            })
+                    element: this.container,
+                })
             : new CSS2DRenderer({
-                element: this.container,
-            });
+                    element: this.container,
+                });
 
         this.camera = this.is3D ? new PerspectiveCamera(30, 1) : null;
         this.scene = new Scene();
